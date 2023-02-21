@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}ImageDB - Image{% endblock %}
+
+{% block content %}
+
+<div id="imageapp">
+  <h1><a href="/">Image</a></h1>
+
+  <img :src="'/'+metadata.path">
+
+  <h3>Title: <template v-if="!edittitle">{{ metadata.title }}<button @click="edittitle=true;focus('newtitle')">✎</button></template><template v-else><input type="text" ref="newtitle" v-model="newtitle"><button @click="metadata.title=newtitle;request('update', {metadata});edittitle=!edittitle">save new title</button><button @click="edittitle=false">cancel edit</button></template></h3>
+
+  <p><b>Description:</b> <template v-if="!editdescription">{{ metadata.description }}<button @click="editdescription=true;focus('newdescription')">✎</button></template><template v-else><input type="text" ref="newdescription" v-model="newdescription"><button @click="metadata.description=newdescription;request('update', {metadata});editdescription=!editdescription">save new description</button><button @click="editdescription=false">cancel edit</button></template></p>
+
+  <p><b>Tags:</b>
+    <template v-for="(tag, index) in metadata.tags">
+      <a :href="'/?q='+tag">{{ tag }}</a><button @click="remTag(tag)">🗑</button>
+    </template>
+    <input type="text" v-model="newtag" size=10 style="width: 15%; display: inline-block;"><button @click="addTag()">add tag</button>
+  </p>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+
+var app = new Vue({
+  el: '#imageapp',
+  data: {
+    metadata: %% metadata|tojson %%,
+    edittitle: false,
+    editdescription: false,
+    newtitle: %% metadata.title | tojson %%,
+    newdescription: %% metadata.description | tojson %%,
+    newtag: "",
+  },
+	methods: {
+    request(path, data) {
+      axios.post("/"+path, data)
+      .then(function (response) {
+        for (const [key, value] of Object.entries(response.data)) {
+          app[key] = value
+        }
+      })
+    },
+    addTag() {
+      if (!app.metadata.tags.includes(app.newtag)) {
+        app.metadata.tags.push(app.newtag)
+        app.request('update', {'metadata': app.metadata})
+      }
+    },
+    remTag(tag) {
+      if (app.metadata.tags.includes(tag)) {
+        app.metadata.tags = app.metadata.tags.filter(t => t != tag)
+        app.request('update', {'metadata': app.metadata})
+      }
+    },
+    focus(ref) {
+      this.$nextTick(() => this.$refs[ref].focus())
+    }
+	}
+})
+
+</script>
+
+{% endblock %}

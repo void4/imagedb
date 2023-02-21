@@ -1,10 +1,15 @@
+import os
 import json
 import uuid
+from glob import glob
+from collections import Counter
+from copy import deepcopy
 
 import dataset
 from flask import g
 
 from app import *
+from utils import *
 
 """
 If it doesn't exist yet, Dataset will create a new file, database.db in this directory
@@ -16,56 +21,122 @@ You can copy these three files somewhere to make a backup of your database
 
 DATABASE = "sqlite:///database.db?check_same_thread=False"
 
+def loads(s):
+	return json.loads(s)
+
+def dumps(j):
+	return json.dumps(j)
+
 def get_table():
-	"""can be called by any function to get access to the database table called 'saves'"""
+	"""can be called by any function to get access to the database table called 'metadata'"""
 
 	db = getattr(g, "_database", None)
 
 	if db is None:
 		db = g._database = dataset.connect(DATABASE)
 
-	return db["saves"]
+	return db["metadata"]
 
-def save_json(j):
+def save_metadata(path, title="", description="", tags=None):
 	"""creates a new row in the database. dataset will insert columns automatically if they don't exist yet
 	the same goes for the table and the database file"""
 
+	if tags is None:
+		tags = []
+
 	table = get_table()
 
-	code = str(uuid.uuid4())
-
 	row = {
-		"code": code,
-		"data": json.dumps(j)
+		"path": path,
+		"sha256sum": sha256sum(path),
+		"title": title,
+		"description": description,
+		"tags": dumps(tags),
 	}
 
 	table.insert(row)
 
-	return code
-
-def load_json(code):
+def load_metadata(path):
 	"""will return None if no row with that input"""
 
 	table = get_table()
 
-	result = table.find_one(code=code)
+	result = table.find_one(path=path)
 
 	if result is None:
 		return None
 
-	return json.loads(result["data"])
+	result["tags"] = loads(result["tags"])
+
+	return result
+
+def update_metadata(metadata):
+	table = get_table()
+
+	metadata = deepcopy(metadata)
+
+	metadata["tags"] = dumps(metadata["tags"])
+
+	table.update(metadata, ["id"])
+
+def update_db():
+	paths = glob("static/files/**/*", recursive=True)
+
+	table = get_table()
+
+	for path in paths:
+		print(path)
+		print(os.path.basename(path))
+		print(sha256sum(path))
+		if table.find_one(path=path) is None:
+			save_metadata(path)
+
+def none2list(user, key):
+	v = user.get(key)
+	return loads(v) if v is not None else []
+
+def search_all_tags(positive=None, negative=None, allownsfw=False):
+
+	if positive is None:
+		positive = []
+
+	if negative is None:
+		negative = []
+
+
+	# TODO: if none, no results on default page?
+
+	tagcounter = Counter()
+	results = []
+	metas = get_table()
+	for meta in metas.all():
+
+		tags = none2list(meta, "tags")
+
+		if len(positive) == 0 or all([tag in tags for tag in positive]):
+			if len(negative) == 0 or not any([tag in tags for tag in negative]):
+				tagcounter.update(tags)
+
+				results.append(meta)
+
+	results = results[::-1]
+
+	mostcommon = tagcounter.most_common()
+
+	return mostcommon, results
+
 
 """
-Utility to execute requests interactively
+Utility to execute requests interactively with context
 
 $ python
 >>> from db import *
->>> code = with_context(save_json, {'test': 123})
+>>> code = wc(save_json, {'test': 123})
 >>> code
 '516a1030-eeec-43a4-b247-c5cf81690c91'
->>> with_context(load_json, code)
+>>> wc(load_json, code)
 {'test': 123}
 """
-def with_context(f, *args, **kwargs):
+def wc(f, *args, **kwargs):
     with app.app_context():
         return f(*args, **kwargs)

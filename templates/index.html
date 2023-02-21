@@ -1,33 +1,77 @@
 {% extends "base.html" %}
 
-{% block title %}Lazyweb - Index{% endblock %}
+{% block title %}ImageDB - Index{% endblock %}
 
 {% block content %}
 
 <div id="app">
-  <h1><a href="/">Game</a></h1>
+  <h1><a href="/">ImageDB</a></h1>
 
-  This game's data: {{ JSON.stringify(data) }}
-  <br><br>
-  <input type="text" placeholder="{'test': 123}" v-model="savedata">
-  <button @click="request('save', {'data': savedata})">Save on server</button><br><br>
+  <div style="display: grid; grid-template-columns: 1fr 6fr;">
+    <div class="iceberglist blueback" style="text-align: left;">
+      <a href="/"><h3>Tag search</h3></a>
 
-  <a v-if="code" :href="'/'+code">/{{ code }}</a>
+      <input type="text" ref="searchtext" :value="query.join(',')"></input>
+      <button @click="clearQuery()">clear</button>
+      <button @click="searchText()">search</button><br><br>
 
+      <div v-for="tag in tags">
+        <button @click="addTag(tag[0])">+ </button> <button @click="remTag(tag[0])">- </button> <button @click="toggleTag(tag[0])">{{ tag[0].split("_").join(" ") }}</button><span style="font-size:80%;color:grey;"> {{ tag[1] }}</span>
+      </div>
+    </div>
+
+    <div class="iceberglist blueback">
+      <h3><button v-if="page>0" @click="previousPage()">prev</button> {{ numresults }} results, page {{ page + 1 }}/{{ Math.ceil(numresults/RESULTSPERPAGE)+1 }} <button v-if="numresults/RESULTSPERPAGE > page + 1" @click="nextPage()">next</button></h3>
+      <div style="display: flex; flex-wrap: wrap;">
+        <a v-for="result in results" class="tagsearchresult" :href="'/i/'+result.path" style="display: flex; align-items: center; justify-content: center; background-position: center;" v-bind:style="{backgroundImage: 'url('+result.path+')'}">
+          <span class="blueback">{{ result.title }}</span>
+        </a>
+      </div>
+      <h3><button v-if="page>0" @click="previousPage()">prev</button> {{ numresults }} results, page {{ page + 1 }}/{{ Math.ceil(numresults/RESULTSPERPAGE)+1 }} <button v-if="numresults/RESULTSPERPAGE > page + 1" @click="nextPage()">next</button></h3>
+    </div>
+  </div>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
 
+<style>
+.tagsearchresult {
+  width: 200px;
+  height: 200px;
+}
+
+@media only screen and (max-width: 480px) {
+  .tagsearchresult {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+body {
+  min-width: 80%;
+  max-width: 100%;
+}
+
+.iceberglist {
+  margin-left: 1%;
+}
+
+</style>
+
 <script>
 
 var app = new Vue({
   el: '#app',
   data: {
-    data: %% data|tojson %%,
-    savedata: "",
-    code: ""
+    results: %% results|tojson %%,
+    numresults: %% numresults|tojson %%,
+    page: %% page|tojson %%,
+    tags: %% tags|tojson %%,
+    loadtime: new Date(),
+    query: %% query|tojson %%,
+    RESULTSPERPAGE: %% RESULTSPERPAGE|tojson %%,
   },
 	methods: {
     request(path, data) {
@@ -38,6 +82,61 @@ var app = new Vue({
         }
       })
     },
+    search() {
+      window.location.href= "/?q=" + this.query.join(",") + "&p=" + this.page
+      console.log(this.query.join(","))
+    },
+    nextPage() {
+      this.page += 1
+      this.search()
+    },
+    previousPage() {
+      if (this.page > 0) {
+        this.page -= 1
+      }
+      this.search()
+    },
+    clearQuery() {
+      this.query = []
+      this.page = 0
+      this.search()
+    },
+    searchText() {
+      this.page = 0
+      this.query = this.$refs['searchtext'].value.split(/,| /)
+      this.search()
+    },
+    toggleTag(tag) {
+      //this.query = [tag]
+      if (this.query.includes("-" + tag)||this.query.includes(tag)) {
+        this.query = this.query.filter(e=>e!="-"+tag && e!=tag)
+      } else {
+        this.query = [tag]
+      }
+      this.page = 0
+      this.search()
+    },
+    addTag(tag) {
+      if (this.query.includes("-" + tag)) {
+        this.query = this.query.filter(e=>e!="-"+tag)
+      }
+      if (!this.query.includes(tag)) {
+        this.query.push(tag)
+      }
+      console.log(this.query)
+      this.page = 0
+      this.search()
+    },
+    remTag(tag) {
+      if (this.query.includes(tag)) {
+        this.query = this.query.filter(e=>e!=tag)
+      }
+      if (!this.query.includes("-" + tag)) {
+        this.query.push("-"+tag)
+      }
+      this.page = 0
+      this.search()
+    }
 	}
 })
 
