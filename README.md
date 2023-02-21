@@ -1,4 +1,4 @@
-# jsonserver
+# imagedb
 
 The laziest way I found so far for creating custom web apps
 
@@ -8,12 +8,12 @@ Tested with Python 3.9.12
 
 ## Download
 
-```git clone https://github.com/void4/jsonserver.git```
+```git clone https://github.com/void4/imagedb.git```
 
 ## Install dependencies
 
 ```
-cd jsonserver
+cd imagedb
 python -m pip install -r requirements.txt
 ```
 
