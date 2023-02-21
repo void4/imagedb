@@ -6,6 +6,7 @@
 
 <div id="app">
   <h1><a href="/">ImageDB</a></h1>
+  database last updated: {{ new Date(refreshedindex*1000).toISOString() }}<button :disabled="!enablerefresh" @click="enablerefresh=false;request('refreshindex')">refresh</button>
 
   <div style="display: grid; grid-template-columns: 1fr 6fr;">
     <div class="iceberglist blueback" style="text-align: left;">
@@ -72,6 +73,8 @@ var app = new Vue({
     loadtime: new Date(),
     query: %% query|tojson %%,
     RESULTSPERPAGE: %% RESULTSPERPAGE|tojson %%,
+    refreshedindex: %% refreshedindex|tojson %%,
+    enablerefresh: true,
   },
 	methods: {
     request(path, data) {
@@ -79,6 +82,9 @@ var app = new Vue({
       .then(function (response) {
         for (const [key, value] of Object.entries(response.data)) {
           app[key] = value
+        }
+        if (path == "refreshindex") {
+          app.enablerefresh = true
         }
       })
     },

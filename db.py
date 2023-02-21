@@ -52,6 +52,8 @@ def save_metadata(path, title="", description="", tags=None):
 		"title": title,
 		"description": description,
 		"tags": dumps(tags),
+		"created": time(),
+		"updated": time()
 	}
 
 	table.insert(row)
@@ -76,6 +78,8 @@ def update_metadata(metadata):
 	metadata = deepcopy(metadata)
 
 	metadata["tags"] = dumps(metadata["tags"])
+
+	metadata["updated"] = time()
 
 	table.update(metadata, ["id"])
 
