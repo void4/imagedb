@@ -45,13 +45,7 @@ def r_update():
 
     return jsonify({"metadata": metadata})
 
-
-
-
-
-
-
-
+wc(update_db)
 
 if __name__ == "__main__":
     app.run("localhost", 1337, debug=True)

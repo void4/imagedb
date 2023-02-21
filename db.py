@@ -80,16 +80,38 @@ def update_metadata(metadata):
 	table.update(metadata, ["id"])
 
 def update_db():
+	print("Updating database index...")
 	paths = glob("static/files/**/*", recursive=True)
 
 	table = get_table()
 
+	checked_paths = {}
+
 	for path in paths:
-		print(path)
-		print(os.path.basename(path))
-		print(sha256sum(path))
-		if table.find_one(path=path) is None:
+		if not os.path.isfile(path):
+			continue
+
+		#print(os.path.dirname(path), os.path.basename(path))
+		checksum = sha256sum(path)
+		samechecksum = table.find_one(sha256sum=checksum)
+		if samechecksum is None:
 			save_metadata(path)
+		else:
+			if samechecksum["path"] != path:
+				if os.path.exists(samechecksum["path"]):
+					print("Found duplicate file with same content at", samechecksum["path"])
+				else:
+					print("File purportedly moved from", samechecksum["path"], ", updating path")
+					samechecksum["path"] = path
+					table.update(samechecksum, ["id"])
+
+		checked_paths[path] = True
+
+	for file in table.all():
+		if file["path"] not in checked_paths:
+			print("Warning: Not found in filesystem:", file["path"])
+
+	print("Updated database index.")
 
 def none2list(user, key):
 	v = user.get(key)
