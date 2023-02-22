@@ -15,6 +15,9 @@ def r_index():
 
 	positive = []
 	negative = []
+
+	textquery = request.args.get("textquery", "").strip()
+
 	q = request.args.get("q")
 	p = int(request.args.get("p", 0))
 
@@ -24,10 +27,10 @@ def r_index():
 				negative.append(word[1:])
 			else:
 				positive.append(word)
-	tags, results = search_all_tags(positive, negative)
+	tags, results = search_all_tags(positive, negative, textquery)
 	numresults = len(results)
 	results = results[p*RESULTSPERPAGE:(p+1)*RESULTSPERPAGE]
-	return render_template("index.html", tags=tags, results=results, numresults=numresults, page=p, query=positive+["-"+q for q in negative], RESULTSPERPAGE=RESULTSPERPAGE, refreshedindex=refreshedindex)
+	return render_template("index.html", tags=tags, results=results, numresults=numresults, page=p, query=positive+["-"+q for q in negative], RESULTSPERPAGE=RESULTSPERPAGE, refreshedindex=refreshedindex, textquery=textquery)
 
 @app.route("/i/<path:path>")
 def r_dirimg(path):

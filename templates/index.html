@@ -10,11 +10,16 @@
 
   <div style="display: grid; grid-template-columns: 1fr 6fr;">
     <div class="iceberglist blueback" style="text-align: left;">
+
+      <a href="/"><h3>Text search</h3></a>
+      <input type="text" ref="searchtext" style="display: inline-block; width: 80%;" v-model="textquery" @keyup.enter="searchTags()" autofocus>
+      <button @click="clearTextQuery()">✖</button>
+
       <a href="/"><h3>Tag search</h3></a>
 
-      <input type="text" ref="searchtext" :value="query.join(',')"></input>
-      <button @click="clearQuery()">clear</button>
-      <button @click="searchText()">search</button><br><br>
+      <input type="text" ref="searchtags" :value="query.join(',')" style="display: inline-block; width: 60%;" @keyup.enter="searchTags()">
+      <button @click="clearQuery()">✖</button>
+      <button @click="searchTags()">🔎</button><br><br>
 
       <div v-for="tag in tags">
         <button @click="addTag(tag[0])">+ </button> <button @click="remTag(tag[0])">- </button> <button @click="toggleTag(tag[0])">{{ tag[0].split("_").join(" ") }}</button><span style="font-size:80%;color:grey;"> {{ tag[1] }}</span>
@@ -72,6 +77,7 @@ var app = new Vue({
     tags: %% tags|tojson %%,
     loadtime: new Date(),
     query: %% query|tojson %%,
+    textquery: %% textquery|tojson %%,
     RESULTSPERPAGE: %% RESULTSPERPAGE|tojson %%,
     refreshedindex: %% refreshedindex|tojson %%,
     enablerefresh: true,
@@ -89,7 +95,7 @@ var app = new Vue({
       })
     },
     search() {
-      window.location.href= "/?q=" + this.query.join(",") + "&p=" + this.page
+      window.location.href= "/?q=" + this.query.join(",") + "&p=" + this.page + "&textquery=" + this.textquery
       console.log(this.query.join(","))
     },
     nextPage() {
@@ -107,9 +113,14 @@ var app = new Vue({
       this.page = 0
       this.search()
     },
-    searchText() {
+    clearTextQuery() {
+      this.textquery = ""
       this.page = 0
-      this.query = this.$refs['searchtext'].value.split(/,| /)
+      this.search()
+    },
+    searchTags() {
+      this.page = 0
+      this.query = this.$refs['searchtags'].value.split(/,| /)
       this.search()
     },
     toggleTag(tag) {

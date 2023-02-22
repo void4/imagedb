@@ -121,7 +121,7 @@ def none2list(user, key):
 	v = user.get(key)
 	return loads(v) if v is not None else []
 
-def search_all_tags(positive=None, negative=None, allownsfw=False):
+def search_all_tags(positive=None, negative=None, textquery=None):
 
 	if positive is None:
 		positive = []
@@ -143,7 +143,15 @@ def search_all_tags(positive=None, negative=None, allownsfw=False):
 			if len(negative) == 0 or not any([tag in tags for tag in negative]):
 				tagcounter.update(tags)
 
-				results.append(meta)
+				textmatch = False
+				if textquery:
+					if textquery in meta["title"] or textquery in meta["description"] or any(textquery in tag for tag in tags):
+						textmatch = True
+				else:
+					textmatch = True
+
+				if textmatch:
+					results.append(meta)
 
 	results = results[::-1]
 
