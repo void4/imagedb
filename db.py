@@ -142,7 +142,6 @@ def search_all_tags(positive=None, negative=None, textquery=None):
 
 		if len(positive) == 0 or all([tag in tags for tag in positive]):
 			if len(negative) == 0 or not any([tag in tags for tag in negative]):
-				tagcounter.update(tags)
 
 				textmatch = False
 				if textquery:
@@ -154,6 +153,7 @@ def search_all_tags(positive=None, negative=None, textquery=None):
 
 				if textmatch:
 					results.append(meta)
+					tagcounter.update(tags)
 
 	results = results[::-1]
 
