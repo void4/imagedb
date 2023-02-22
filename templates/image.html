@@ -49,7 +49,7 @@ var app = new Vue({
     },
     addTag() {
       if (!app.metadata.tags.includes(app.newtag)) {
-        app.metadata.tags.push(app.newtag)
+        app.metadata.tags.push(app.newtag.toLowerCase())
         app.request('update', {'metadata': app.metadata})
       }
     },
