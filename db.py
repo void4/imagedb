@@ -146,7 +146,7 @@ def search_all_tags(positive=None, negative=None, textquery=None):
 				textmatch = False
 				if textquery:
 					textquery = textquery.lower()
-					if textquery in meta["title"].lower() or textquery in meta["description"].lower() or any(textquery in tag.lower() for tag in tags):
+					if textquery in meta["path"].lower() or textquery in meta["title"].lower() or textquery in meta["description"].lower() or any(textquery in tag.lower() for tag in tags):
 						textmatch = True
 				else:
 					textmatch = True
